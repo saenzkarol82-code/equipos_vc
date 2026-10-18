@@ -18,7 +18,7 @@
                 </div>
                 <div class="card-body">
                     <!-- El formulario envía los datos a procesar_equipo.php -->
-                    <form action="registro.php" method="POST">
+                    <form action="../conexion/registro.php" method="POST">
                         
                         <div class="mb-3">
                             <label for="nombre" class="form-label">Nombre del Equipo</label>
@@ -52,7 +52,7 @@
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success">Guardar Equipo en Inventario</button>
-                            <a href="dashboard.php" class="btn btn-secondary">Cancelar y Volver</a>
+                            <a href="../index.html" class="btn btn-secondary">Cancelar y Volver</a>
                         </div>
                     </form>
                 </div>

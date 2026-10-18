@@ -32,69 +32,98 @@ try {
 <body class="bg-light">
 
 <div class="container mt-5">
+    
+    <!-- Menú de navegación superior rápido -->
+    <div class="mb-3">
+        <a href="index.html" class="btn btn-outline-secondary btn-sm">⬅ Volver al Menú Principal</a>
+    </div>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Panel de Control - Dispositivos de Conferencia</h2>
-        <!-- El botón que dispara el controlador -->
+        <h2>Panel de Control - Dispositivos</h2>
+        <!-- El botón que dispara el controlador general -->
         <a href="controlador_tv.php" class="btn btn-primary">
-            Actualizar Diagnóstico Ahora
+            Actualizar Todos los Estados
         </a>
     </div>
 
     <div class="card shadow-sm">
         <div class="card-body p-0">
-            <table class="table table-hover table-striped mb-0">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Dispositivo</th>
-                        <th>IP / MAC</th>
-                        <th>Estado</th>
-                        <th>Sistema / Apps</th>
-                        <th>Última Lectura</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (count($equipos_estado) > 0): ?>
-                        <?php foreach ($equipos_estado as $row): ?>
-                            <tr>
-                                <td>
-                                    <strong><?= htmlspecialchars($row['nombre']) ?></strong><br>
-                                    <small class="text-muted"><?= htmlspecialchars($row['tipo']) ?></small>
-                                </td>
-                                <td>
-                                    <?= htmlspecialchars($row['ip']) ?><br>
-                                    <small class="text-muted"><?= htmlspecialchars($row['mac_address']) ?></small>
-                                </td>
-                                <td>
-                                    <?php 
-                                        // Lógica visual para el estado
-                                        $estado = $row['estado'] ?? 'Sin datos';
-                                        $badge_class = ($estado === 'Encendido') ? 'bg-success' : (($estado === 'Sin datos') ? 'bg-secondary' : 'bg-danger');
-                                    ?>
-                                    <span class="badge <?= $badge_class ?>"><?= htmlspecialchars($estado) ?></span>
-                                </td>
-                                <td>
-                                    <?php if ($row['version_os']): ?>
-                                        <span class="badge bg-info text-dark mb-1"><?= htmlspecialchars($row['version_os']) ?></span><br>
-                                        <!-- Mostramos las apps truncando el texto si es muy largo -->
-                                        <small class="text-muted text-break" style="max-width: 200px; display: inline-block;">
-                                            <?= htmlspecialchars(substr($row['aplicaciones'], 0, 80)) ?>...
-                                        </small>
-                                    <?php else: ?>
-                                        <span class="text-muted">N/A</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?= $row['fecha_escaneo'] ? date('d M Y, H:i', strtotime($row['fecha_escaneo'])) : 'Nunca' ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
+            <!-- Hacemos la tabla responsive para que no se desborde con las nuevas columnas -->
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="table-dark">
                         <tr>
-                            <td colspan="5" class="text-center py-4">No hay equipos registrados en la base de datos.</td>
+                            <th>Dispositivo</th>
+                            <th>IP / MAC</th>
+                            <th>Estado</th>
+                            <th>Sistema / Apps</th>
+                            <th>Última Lectura</th>
+                            <!-- NUEVA COLUMNA PARA PRUEBAS FÍSICAS -->
+                            <th class="text-center">Pruebas Hardware</th>
                         </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php if (count($equipos_estado) > 0): ?>
+                            <?php foreach ($equipos_estado as $row): ?>
+                                <tr>
+                                    <td>
+                                        <strong><?= htmlspecialchars($row['nombre']) ?></strong><br>
+                                        <small class="text-muted"><?= htmlspecialchars($row['tipo']) ?></small>
+                                    </td>
+                                    <td>
+                                        <?= htmlspecialchars($row['ip']) ?><br>
+                                        <small class="text-muted"><?= htmlspecialchars($row['mac_address']) ?></small>
+                                    </td>
+                                    <td>
+                                        <?php 
+                                            // Lógica visual para el estado
+                                            $estado = $row['estado'] ?? 'Sin datos';
+                                            $badge_class = ($estado === 'Encendido') ? 'bg-success' : (($estado === 'Sin datos') ? 'bg-secondary' : 'bg-danger');
+                                        ?>
+                                        <span class="badge <?= $badge_class ?>"><?= htmlspecialchars($estado) ?></span>
+                                    </td>
+                                    <td>
+                                        <?php if ($row['version_os']): ?>
+                                            <span class="badge bg-info text-dark mb-1"><?= htmlspecialchars($row['version_os']) ?></span><br>
+                                            <small class="text-muted text-break" style="max-width: 200px; display: inline-block;">
+                                                <?= htmlspecialchars(substr($row['aplicaciones'], 0, 80)) ?>...
+                                            </small>
+                                        <?php else: ?>
+                                            <span class="text-muted">N/A</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?= $row['fecha_escaneo'] ? date('d M Y, H:i', strtotime($row['fecha_escaneo'])) : 'Nunca' ?>
+                                    </td>
+                                    
+                                    <!-- NUEVA SECCIÓN DE BOTONES DE ACCIÓN -->
+                                    <td class="text-center">
+                                        <!-- 
+                                          Estos botones enviarán la IP y la acción específica por URL (Método GET) 
+                                          a un nuevo controlador que crearemos para enviar comandos individuales a Python
+                                        -->
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="controlador_hardware.php?ip=<?= urlencode($row['ip']) ?>&accion=camara" 
+                                               class="btn btn-outline-dark" title="Probar Cámara">
+                                                📷 Cámara
+                                            </a>
+                                            <a href="controlador_hardware.php?ip=<?= urlencode($row['ip']) ?>&accion=microfono" 
+                                               class="btn btn-outline-dark" title="Probar Micrófono">
+                                                🎤 Audio
+                                            </a>
+                                        </div>
+                                    </td>
+
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="6" class="text-center py-4">No hay equipos registrados en la base de datos.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
