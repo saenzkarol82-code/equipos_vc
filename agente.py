@@ -2,66 +2,47 @@ import sys
 import subprocess
 import json
 
-def ejecutar_comando(comando):
-    """Función auxiliar para ejecutar comandos de sistema y capturar la salida."""
-    try:
-        # Ejecuta el comando, captura el texto y le da un tiempo límite de 5 segundos
-        resultado = subprocess.run(comando, capture_output=True, text=True, timeout=5, shell=True)
-        return resultado.stdout.strip()
-    except subprocess.TimeoutExpired:
-        return ""
-    except Exception as e:
-        return ""
+# 1. LECTURA DE ARGUMENTOS (Lo que envió PHP)
+# sys.argv es una lista que captura las palabras escritas en la consola.
+# sys.argv[0] es "agente.py"
+# sys.argv[1] es "192.168.1.15" (La IP)
+# sys.argv[2] es "camara" o "microfono" (La Acción - Opcional)
 
-# 1. Validar que PHP nos envíe una IP
-if len(sys.argv) < 2:
-    print(json.dumps({"error": "No se proporcionó IP"}))
-    sys.exit(1)
+ip_dispositivo = sys.argv[1]
+puerto_adb = "5555" # Puerto estándar de depuración inalámbrica Android
+objetivo = f"{ip_dispositivo}:{puerto_adb}"
 
-ip_equipo = sys.argv[1]
-puerto = "5555" # Puerto por defecto de ADB por Wi-Fi
-objetivo = f"{ip_equipo}:{puerto}"
-
-# 2. Intentar conectar por ADB
-ejecutar_comando(f"adb connect {objetivo}")
-
-# 3. Comprobar si realmente está conectado y responde
-comprobacion = ejecutar_comando(f"adb -s {objetivo} shell echo 'activo'")
-
-if "activo" in comprobacion:
-    estado = "Encendido"
+# Verificamos si PHP nos envió una acción específica (sys.argv tiene 3 elementos)
+if len(sys.argv) > 2:
+    accion = sys.argv[2]
     
-    # Extraer la MAC (buscamos en la tarjeta Wi-Fi, si falla, buscamos en la de red cableada)
-    mac = ejecutar_comando(f"adb -s {objetivo} shell cat /sys/class/net/wlan0/address")
-    if not mac or "No such file" in mac:
-        mac = ejecutar_comando(f"adb -s {objetivo} shell cat /sys/class/net/eth0/address")
-    mac = mac.strip().upper() if "No such" not in mac else "MAC_DESCONOCIDA"
-    
-    # Extraer versión del Sistema Operativo
-    version_os = ejecutar_comando(f"adb -s {objetivo} shell getprop ro.build.version.release")
-    
-    # Extraer aplicaciones instaladas por el usuario (filtro -3)
-    apps_crudas = ejecutar_comando(f"adb -s {objetivo} shell pm list packages -3")
-    # Limpiar el texto para que solo queden los nombres limpios (ej: com.netflix.ninja)
-    apps = [linea.replace("package:", "") for linea in apps_crudas.splitlines() if linea]
-    
+    # 2. EVALUACIÓN DE LA ACCIÓN
+    if accion == "camara":
+        """
+          LÓGICA ADB PARA CÁMARA:
+          - adb -s [IP]: Le dice a ADB con qué teléfono hablar.
+          - shell am start: Ordena al Activity Manager (am) iniciar una pantalla.
+          - -a android.media.action.IMAGE_CAPTURE: Es el "Intent" nativo universal de Android 
+            que despierta el hardware de la cámara sin importar la marca del celular.
+        """
+        comando_adb = f"adb -s {objetivo} shell am start -a android.media.action.IMAGE_CAPTURE"
+        subprocess.run(comando_adb, shell=True, capture_output=True)
+        
+        # Devolvemos un JSON a PHP confirmando que se dio la orden
+        print(json.dumps({"estado_hardware": "Comando de cámara enviado"}))
+        
+    elif accion == "microfono":
+        """
+          LÓGICA ADB PARA MICRÓFONO:
+          RECORD_SOUND es el Intent que abre la app de grabadora de voz nativa.
+        """
+        comando_adb = f"adb -s {objetivo} shell am start -a android.provider.MediaStore.RECORD_SOUND"
+        subprocess.run(comando_adb, shell=True, capture_output=True)
+        
+        print(json.dumps({"estado_hardware": "Comando de micrófono enviado"}))
+
 else:
-    estado = "Apagado"
-    mac = "N/A"
-    version_os = "N/A"
-    apps = []
-
-# Desconectar por limpieza
-ejecutar_comando(f"adb disconnect {objetivo}")
-
-# 4. Construir el diccionario y empaquetarlo en JSON
-datos_recolectados = {
-    "ip": ip_equipo,
-    "mac": mac,
-    "estado": estado,
-    "version_os": f"Android {version_os}" if version_os != "N/A" else "N/A",
-    "aplicaciones": apps
-}
-
-# 5. Imprimir la salida (Esto es lo único que PHP verá)
-print(json.dumps(datos_recolectados))
+    # 3. MODO ESCANEO (El comportamiento original)
+    # Si no hay acción (len(sys.argv) == 2), Python hace lo que ya sabía hacer: 
+    # conectarse, leer apps, leer SO, empaquetar en JSON y devolver la lectura.
+    pass

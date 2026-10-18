@@ -103,11 +103,11 @@ try {
                                           a un nuevo controlador que crearemos para enviar comandos individuales a Python
                                         -->
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="controlador_hardware.php?ip=<?= urlencode($row['ip']) ?>&accion=camara" 
+                                            <a href="controlador_equipos.php?ip=<?= urlencode($row['ip']) ?>&accion=camara" 
                                                class="btn btn-outline-dark" title="Probar Cámara">
                                                 📷 Cámara
                                             </a>
-                                            <a href="controlador_hardware.php?ip=<?= urlencode($row['ip']) ?>&accion=microfono" 
+                                            <a href="controlador_equipos.php?ip=<?= urlencode($row['ip']) ?>&accion=microfono" 
                                                class="btn btn-outline-dark" title="Probar Micrófono">
                                                 🎤 Audio
                                             </a>
